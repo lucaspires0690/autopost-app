@@ -1,5 +1,7 @@
-// functions/index.js
+// functions/index.js - VERSÃO FINAL CORRIGIDA PARA LER CONFIG DA NUVEM
 
+// Importa o 'functions' para usar o functions.config()
+const functions = require("firebase-functions");
 const { onCall, HttpsError } = require("firebase-functions/v2/https" );
 const { onSchedule } = require("firebase-functions/v2/scheduler");
 const { logger } = require("firebase-functions");
@@ -14,15 +16,18 @@ const ensureFirebaseApp = () => {
 };
 
 // ===================================================================
-// FUNÇÃO: exchangeAuthCode (Atualizada para v2)
+// FUNÇÃO: exchangeAuthCode (CORRIGIDA)
 // ===================================================================
 exports.exchangeAuthCode = onCall(async (request) => {
   ensureFirebaseApp();
   
   const { code } = request.data;
-  // As variáveis de ambiente são carregadas automaticamente pelo Firebase a partir do arquivo .env
-  const clientId = process.env.YOUTUBE_CLIENT_ID;
-  const clientSecret = process.env.YOUTUBE_CLIENT_SECRET;
+  
+  // CORREÇÃO APLICADA AQUI:
+  // Lendo as credenciais do "cofre" do Firebase que configuramos no terminal.
+  const clientId = functions.config().youtube.client_id;
+  const clientSecret = functions.config().youtube.client_secret;
+  
   // URL de produção final
   const redirectUri = "https://autopost-app.vercel.app/authCallback.html";
 
@@ -31,8 +36,9 @@ exports.exchangeAuthCode = onCall(async (request) => {
     throw new HttpsError('invalid-argument', 'O código de autorização é obrigatório.');
   }
 
+  // Verificação para garantir que as configurações foram carregadas
   if (!clientId || !clientSecret) {
-    logger.error("Variáveis de ambiente YOUTUBE_CLIENT_ID ou YOUTUBE_CLIENT_SECRET não estão definidas.");
+    logger.error("ERRO CRÍTICO: Client ID ou Client Secret não foram carregados da configuração do Firebase. Verifique se 'firebase functions:config:set' foi executado corretamente.");
     throw new HttpsError('internal', 'Erro de configuração no servidor. Contate o suporte.');
   }
 
@@ -65,6 +71,10 @@ exports.exchangeAuthCode = onCall(async (request) => {
   } catch (error) {
     logger.error("Erro no processo de troca de código:", error);
     if (error instanceof HttpsError) throw error;
+    // Tratamento específico para o erro que vimos nos logs
+    if (error.message.includes('invalid_client')) {
+        throw new HttpsError('internal', 'Erro de autenticação do servidor (invalid_client). Verifique as credenciais no Firebase config.');
+    }
     if (error.message.includes('invalid_grant')) {
       throw new HttpsError('invalid-argument', 'Código de autorização inválido ou expirado.');
     }
@@ -73,7 +83,7 @@ exports.exchangeAuthCode = onCall(async (request) => {
 });
 
 // ===================================================================
-// FUNÇÃO: checkScheduledPosts (Mantida como estava, apenas com a inicialização preguiçosa)
+// FUNÇÃO: checkScheduledPosts (Sem alterações necessárias)
 // ===================================================================
 exports.checkScheduledPosts = onSchedule("every 5 minutes", async (event) => {
   ensureFirebaseApp();
@@ -90,13 +100,10 @@ exports.checkScheduledPosts = onSchedule("every 5 minutes", async (event) => {
   }
 
   logger.info(`→ Encontrados ${snapshot.size} agendamento(s).`);
-  // Supondo que sua função processScheduledPost esteja definida em outro lugar ou abaixo
+  // Sua lógica de processamento de posts continua aqui
   // const tasks = snapshot.docs.map(doc => processScheduledPost(doc, db, bucket));
   // await Promise.allSettled(tasks);
   
   logger.info("=== Verificação de agendamentos concluída ===");
   return null;
 });
-
-// Se sua função processScheduledPost estiver neste arquivo, ela deve vir aqui.
-// async function processScheduledPost(doc, db, bucket) { ... }

@@ -1,4 +1,4 @@
-// public/auth.js - VERSÃO FINAL CORRIGIDA
+// public/auth.js - VERSÃO FINAL COM ESPECIFICAÇÃO DE REGIÃO
 
 document.addEventListener('DOMContentLoaded', () => {
     // --- CONFIGURAÇÃO DO FIREBASE ---
@@ -21,7 +21,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Sua URL de produção final da Vercel
     const REDIRECT_URI = "https://autopost-app.vercel.app/authCallback.html";
 
-    const btnAuthorize = document.getElementById('btn-authorize' );
+    const btnAuthorize = document.getElementById('btn-authorize'  );
     if (btnAuthorize) {
         btnAuthorize.addEventListener('click', handleAuthorization);
     }
@@ -31,10 +31,10 @@ document.addEventListener('DOMContentLoaded', () => {
             'https://www.googleapis.com/auth/youtube.upload',
             'https://www.googleapis.com/auth/youtube',
             'https://www.googleapis.com/auth/youtube.readonly'
-        ].join(' ' );
+        ].join(' '  );
 
         const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?` +
-            `client_id=${encodeURIComponent(CLIENT_ID )}` +
+            `client_id=${encodeURIComponent(CLIENT_ID  )}` +
             `&redirect_uri=${encodeURIComponent(REDIRECT_URI)}` +
             `&response_type=code` +
             `&scope=${encodeURIComponent(scopes)}` +
@@ -67,7 +67,14 @@ document.addEventListener('DOMContentLoaded', () => {
         displayError('');
 
         try {
-            const exchangeAuthCode = firebase.functions().httpsCallable('exchangeAuthCode' );
+            // ===================================================================
+            //  MODIFICAÇÃO APLICADA AQUI
+            // ===================================================================
+            // Especificando a região para garantir a conexão com a Cloud Function
+            const functions = firebase.functions('us-central1');
+            const exchangeAuthCode = functions.httpsCallable('exchangeAuthCode' );
+            // ===================================================================
+
             const result = await exchangeAuthCode({ code: code });
 
             const finalData = {
