@@ -204,7 +204,7 @@ async function handleSaveChannel(e) {
             token_type: "Bearer"
         },
         status: "active",
-        lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
+        lastUpdated: firebase.firestore.FieldValue.serverTimestamp( )
     };
 
     try {

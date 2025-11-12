@@ -1,13 +1,10 @@
-// public/auth.js - VERSÃO FINAL COM ESPECIFICAÇÃO DE REGIÃO
-
 document.addEventListener('DOMContentLoaded', () => {
     // --- CONFIGURAÇÃO DO FIREBASE ---
-    // Dados do seu projeto Firebase
     const firebaseConfig = {
       apiKey: "AIzaSyCJyUdfldom5yTcaDkk4W1r8IGYxeO2epI",
       authDomain: "autopost-v2.firebaseapp.com",
       projectId: "autopost-v2",
-      storageBucket: "autopost-v2.appspot.com",
+      storageBucket: "autopost-v2.firebasestorage.app",
       messagingSenderId: "498596971317",
       appId: "1:498596971317:web:3e2536fe8e4fd28e0d427c"
     };
@@ -16,12 +13,10 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // --- VARIÁVEIS DE PRODUÇÃO ---
-    // Seu Client ID real do Google Cloud
     const CLIENT_ID = "498596971317-p183rsbts6bpomv989r8ov46kt9idrtb.apps.googleusercontent.com";
-    // Sua URL de produção final da Vercel
     const REDIRECT_URI = "https://autopost-app.vercel.app/authCallback.html";
 
-    const btnAuthorize = document.getElementById('btn-authorize'  );
+    const btnAuthorize = document.getElementById('btn-authorize' );
     if (btnAuthorize) {
         btnAuthorize.addEventListener('click', handleAuthorization);
     }
@@ -31,10 +26,10 @@ document.addEventListener('DOMContentLoaded', () => {
             'https://www.googleapis.com/auth/youtube.upload',
             'https://www.googleapis.com/auth/youtube',
             'https://www.googleapis.com/auth/youtube.readonly'
-        ].join(' '  );
+        ].join(' ' );
 
         const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?` +
-            `client_id=${encodeURIComponent(CLIENT_ID  )}` +
+            `client_id=${encodeURIComponent(CLIENT_ID )}` +
             `&redirect_uri=${encodeURIComponent(REDIRECT_URI)}` +
             `&response_type=code` +
             `&scope=${encodeURIComponent(scopes)}` +
@@ -57,26 +52,28 @@ document.addEventListener('DOMContentLoaded', () => {
                     processAuthCode(code);
                 }
             } catch (error) {
-                // Ignora erros de cross-origin
+                // Ignora erros de cross-origin que são normais neste processo
             }
         }, 500);
     }
 
     async function processAuthCode(code) {
-        showLoading(true);
-        displayError('');
+        const loadingOverlay = document.getElementById('loading-overlay');
+        const errorMessage = document.getElementById('auth-error-message');
+        
+        if (loadingOverlay) loadingOverlay.style.display = 'flex';
+        if (errorMessage) {
+            errorMessage.textContent = '';
+            errorMessage.style.display = 'none';
+        }
 
         try {
-            // ===================================================================
-            //  MODIFICAÇÃO APLICADA AQUI
-            // ===================================================================
-            // Especificando a região para garantir a conexão com a Cloud Function
             const functions = firebase.functions('us-central1');
             const exchangeAuthCode = functions.httpsCallable('exchangeAuthCode' );
-            // ===================================================================
 
             const result = await exchangeAuthCode({ code: code });
 
+            // Estrutura os dados finais para exibição
             const finalData = {
                 id: result.data.channelInfo.id,
                 title: result.data.channelInfo.title,
@@ -94,27 +91,19 @@ document.addEventListener('DOMContentLoaded', () => {
             if(step1) step1.style.display = 'none';
             if(step2) step2.style.display = 'block';
             
-            if (typeof feather !== 'undefined') feather.replace();
+            // Re-inicializa os ícones Feather, se a biblioteca estiver presente
+            if (typeof feather !== 'undefined') {
+                feather.replace();
+            }
 
         } catch (error) {
-            console.error("❌ Erro ao processar código:", error);
-            displayError(error.message || "Ocorreu um erro desconhecido.");
+            console.error("❌ Erro ao chamar a Cloud Function:", error);
+            if (errorMessage) {
+                errorMessage.textContent = `Erro: ${error.message || "Ocorreu um erro desconhecido."}`;
+                errorMessage.style.display = 'block';
+            }
         } finally {
-            showLoading(false);
-        }
-    }
-
-    // --- Funções Auxiliares de UI ---
-    function showLoading(show) {
-        const overlay = document.getElementById('loading-overlay');
-        if (overlay) overlay.style.display = show ? 'flex' : 'none';
-    }
-
-    function displayError(message) {
-        const errorElement = document.getElementById('auth-error-message');
-        if (errorElement) {
-            errorElement.textContent = message;
-            errorElement.style.display = message ? 'block' : 'none';
+            if (loadingOverlay) loadingOverlay.style.display = 'none';
         }
     }
 
@@ -129,7 +118,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     copyButton.innerHTML = originalText;
                 }, 2000);
             }).catch(err => {
-                alert('Erro ao copiar.');
+                console.error('Erro ao copiar:', err);
+                alert('Não foi possível copiar o texto.');
             });
         });
     }
