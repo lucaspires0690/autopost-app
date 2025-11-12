@@ -1,6 +1,6 @@
 // ===================================================================
 // ARQUIVO: public/script.js
-// VERSÃO 10 - REDIRECIONAMENTO PARA PÁGINA DE AUTORIZAÇÃO EXTERNA
+// VERSÃO 8 - INTEGRAÇÃO COM FERRAMENTA DE AUTORIZAÇÃO AUTOMÁTICA
 // ===================================================================
 
 // ===================================================================
@@ -16,7 +16,7 @@ const firebaseConfig = {
   appId: "1:498596971317:web:3e2536fe8e4fd28e0d427c"
 };
 
-if (!firebase.apps.length ) {
+if (!firebase.apps.length) {
   firebase.initializeApp(firebaseConfig);
 }
 
@@ -104,10 +104,37 @@ function setupEventListeners() {
   document.getElementById('login-form')?.addEventListener('submit', handleLogin);
   document.getElementById('btn-logout')?.addEventListener('click', handleLogout);
   
-  // Botão Adicionar Canal - Redireciona para a página de autorização
-  document.getElementById('btn-add-channel')?.addEventListener('click', handleAddChannelClick);
+  // --- LÓGICA DE ADIÇÃO DE CANAL INTEGRADA ---
 
-  // Formulário de adição de canal (mantido para uso manual)
+  // 1. Botão para ABRIR A FERRAMENTA DE AUTORIZAÇÃO
+  document.getElementById('btn-add-channel')?.addEventListener('click', () => {
+    const authToolUrl = 'https://autopost-app.vercel.app/auth.html';
+    window.open(authToolUrl, 'authToolWindow', 'width=800,height=600' );
+  });
+
+  // 2. Listener para RECEBER DADOS da ferramenta de autorização
+  window.addEventListener('message', (event) => {
+    // Adicionada verificação de segurança para a origem
+    if (event.origin !== 'https://autopost-app.vercel.app' ) return;
+
+    if (event.data.type === 'newChannelData') {
+        const channelData = event.data.data;
+        console.log('Dados do novo canal recebidos:', channelData);
+        
+        // Preenche o formulário do modal com os dados recebidos
+        document.getElementById('channel-id').value = channelData.id || '';
+        document.getElementById('channel-title').value = channelData.title || '';
+        document.getElementById('channel-custom-url').value = channelData.customUrl || '';
+        document.getElementById('channel-refresh-token').value = channelData.refresh_token || '';
+
+        // Abre o modal de confirmação
+        openModal('add-channel-modal');
+    }
+  });
+
+  // --- FIM DA LÓGICA DE ADIÇÃO ---
+
+  // Formulário de adição de canal (a função handleSaveChannel já está correta)
   document.getElementById('add-channel-form')?.addEventListener('submit', handleSaveChannel);
 
   // Navegação
@@ -128,21 +155,6 @@ function setupEventListeners() {
     });
   });
 }
-
-// ===================================================================
-// FLUXO DE AUTORIZAÇÃO (REDIRECIONAMENTO)
-// ===================================================================
-
-/**
- * MODIFICADO: Esta função agora abre a página de autorização externa em uma nova aba.
- */
-function handleAddChannelClick() {
-  console.log("Abrindo a página de autorização em uma nova aba...");
-  window.open('https://autopost-app.vercel.app/auth.html', '_blank' );
-}
-
-// As funções handleAuthMessage e processAuthCode foram removidas pois o fluxo de OAuth
-// foi movido para a página externa.
 
 // ===================================================================
 // LÓGICA DE AUTENTICAÇÃO E CADASTRO DE CANAL
