@@ -1,6 +1,6 @@
 // ===================================================================
 // ARQUIVO: public/script.js
-// VERSÃO 9 - AUTORIZAÇÃO OAUTH DIRETA NO DASHBOARD
+// VERSÃO 10 - REDIRECIONAMENTO PARA PÁGINA DE AUTORIZAÇÃO EXTERNA
 // ===================================================================
 
 // ===================================================================
@@ -16,7 +16,7 @@ const firebaseConfig = {
   appId: "1:498596971317:web:3e2536fe8e4fd28e0d427c"
 };
 
-if (!firebase.apps.length) {
+if (!firebase.apps.length ) {
   firebase.initializeApp(firebaseConfig);
 }
 
@@ -28,17 +28,6 @@ const AppState = {
   currentUser: null,
   canalAtual: null,
   channelListenerUnsubscribe: null,
-};
-
-// Configurações OAuth do Google
-const OAUTH_CONFIG = {
-  CLIENT_ID: "498596971317-hat8dm8k1ok204omfadfqnej9bsnpc69.apps.googleusercontent.com",
-  REDIRECT_URI: "https://autopost-app.vercel.app/authCallback.html",
-  SCOPES: [
-    'https://www.googleapis.com/auth/youtube.upload',
-    'https://www.googleapis.com/auth/youtube',
-    'https://www.googleapis.com/auth/youtube.readonly'
-  ]
 };
 
 // ===================================================================
@@ -115,15 +104,10 @@ function setupEventListeners() {
   document.getElementById('login-form')?.addEventListener('submit', handleLogin);
   document.getElementById('btn-logout')?.addEventListener('click', handleLogout);
   
-  // ===================================================================
-  // NOVO: BOTÃO ADICIONAR CANAL - DISPARA OAUTH DIRETO
-  // ===================================================================
+  // Botão Adicionar Canal - Redireciona para a página de autorização
   document.getElementById('btn-add-channel')?.addEventListener('click', handleAddChannelClick);
 
-  // Listener para receber dados do popup de autorização
-  window.addEventListener('message', handleAuthMessage);
-
-  // Formulário de adição de canal
+  // Formulário de adição de canal (mantido para uso manual)
   document.getElementById('add-channel-form')?.addEventListener('submit', handleSaveChannel);
 
   // Navegação
@@ -146,85 +130,19 @@ function setupEventListeners() {
 }
 
 // ===================================================================
-// FLUXO DE AUTORIZAÇÃO OAUTH (INTEGRADO NO DASHBOARD)
+// FLUXO DE AUTORIZAÇÃO (REDIRECIONAMENTO)
 // ===================================================================
 
+/**
+ * MODIFICADO: Esta função agora abre a página de autorização externa em uma nova aba.
+ */
 function handleAddChannelClick() {
-  console.log("🔐 Iniciando fluxo de autorização OAuth...");
-  
-  const scopes = OAUTH_CONFIG.SCOPES.join(' ');
-  const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?` +
-    `client_id=${encodeURIComponent(OAUTH_CONFIG.CLIENT_ID)}` +
-    `&redirect_uri=${encodeURIComponent(OAUTH_CONFIG.REDIRECT_URI)}` +
-    `&response_type=code` +
-    `&scope=${encodeURIComponent(scopes)}` +
-    `&access_type=offline` +
-    `&prompt=consent`;
-
-  // Abre o popup de autorização do Google
-  const popup = window.open(authUrl, 'authPopup', 'width=600,height=700');
-
-  // Monitora se o popup foi fechado manualmente
-  const checkPopupClosed = setInterval(() => {
-    try {
-      if (popup && popup.closed) {
-        clearInterval(checkPopupClosed);
-        console.log("ℹ️ Popup de autorização foi fechado.");
-      }
-    } catch (error) {
-      clearInterval(checkPopupClosed);
-    }
-  }, 1000);
+  console.log("Abrindo a página de autorização em uma nova aba...");
+  window.open('https://autopost-app.vercel.app/auth.html', '_blank' );
 }
 
-function handleAuthMessage(event) {
-  // Valida a origem da mensagem
-  if (event.origin !== window.location.origin) return;
-
-  if (event.data.type === 'AUTH_CODE') {
-    console.log("✅ Código de autorização recebido!");
-    processAuthCode(event.data.code);
-  } else if (event.data.type === 'AUTH_ERROR') {
-    console.error("❌ Erro na autorização:", event.data.error);
-    showError(`Erro na autenticação: ${event.data.error}`);
-  }
-}
-
-async function processAuthCode(code) {
-  showLoading(true);
-  
-  try {
-    console.log("🔄 Trocando código de autorização por tokens...");
-    
-    const functions = firebase.functions();
-    const exchangeAuthCode = functions.httpsCallable('exchangeAuthCode');
-    const result = await exchangeAuthCode({ code: code });
-
-    console.log("✅ Tokens recebidos com sucesso!");
-
-    const channelData = {
-      id: result.data.channelInfo.id,
-      title: result.data.channelInfo.title,
-      customUrl: result.data.channelInfo.customUrl,
-      refresh_token: result.data.oauth.refresh_token
-    };
-
-    // Preenche o modal com os dados recebidos
-    document.getElementById('channel-id').value = channelData.id || '';
-    document.getElementById('channel-title').value = channelData.title || '';
-    document.getElementById('channel-custom-url').value = channelData.customUrl || '';
-    document.getElementById('channel-refresh-token').value = channelData.refresh_token || '';
-
-    // Abre o modal de confirmação
-    openModal('add-channel-modal');
-
-  } catch (error) {
-    console.error("❌ Erro ao processar código de autorização:", error);
-    showError(`Erro ao processar autorização: ${error.message || "Erro desconhecido"}`);
-  } finally {
-    showLoading(false);
-  }
-}
+// As funções handleAuthMessage e processAuthCode foram removidas pois o fluxo de OAuth
+// foi movido para a página externa.
 
 // ===================================================================
 // LÓGICA DE AUTENTICAÇÃO E CADASTRO DE CANAL
@@ -294,7 +212,7 @@ async function handleSaveChannel(e) {
             token_type: "Bearer"
         },
         status: "active",
-        lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
+        lastUpdated: firebase.firestore.FieldValue.serverTimestamp( )
     };
 
     try {
