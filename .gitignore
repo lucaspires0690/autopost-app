@@ -1,0 +1,16 @@
+# Dependências
+node_modules/
+functions/node_modules/
+
+# Arquivos de ambiente
+.env
+.env.*
+
+# Arquivos de credenciais e chaves
+credentials.json
+service-account-key.json
+*.json
+
+# Arquivos de log e cache do Firebase
+.firebase/
+*.log

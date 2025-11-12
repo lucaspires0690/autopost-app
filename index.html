@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Autopost Dashboard</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://unpkg.com/feather-icons"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
+</head>
+<body>
+
+    <!-- TELA DE LOGIN -->
+    <div id="login-page" class="login-container">
+        <div class="login-box">
+            <h1>Autopost</h1>
+            <p>Faça login para continuar</p>
+            <form id="login-form">
+                <div class="input-group">
+                    <label for="login-email">Email</label>
+                    <input type="email" id="login-email" required>
+                </div>
+                <div class="input-group">
+                    <label for="login-password">Senha</label>
+                    <input type="password" id="login-password" required>
+                </div>
+                <button type="submit" class="btn btn-primary">Entrar</button>
+                <p id="login-error-message" class="error-message"></p>
+            </form>
+        </div>
+    </div>
+
+    <!-- CONTAINER PRINCIPAL DA APLICAÇÃO -->
+    <div class="container" style="display: none;">
+        <!-- BARRA LATERAL PRINCIPAL -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <i data-feather="youtube"></i>
+                <span>Autopost</span>
+            </div>
+            <nav class="sidebar-nav">
+                <a href="#" class="nav-item active" data-page="dashboard">
+                    <i data-feather="home"></i>
+                    <span>Dashboard</span>
+                </a>
+                <a href="#" class="nav-item" data-page="settings">
+                    <i data-feather="settings"></i>
+                    <span>Configurações</span>
+                </a>
+            </nav>
+            <div class="sidebar-footer">
+                <a href="#" id="btn-logout" class="nav-item">
+                    <i data-feather="log-out"></i>
+                    <span>Sair</span>
+                </a>
+            </div>
+        </aside>
+
+        <!-- CONTEÚDO PRINCIPAL -->
+        <main class="main-content">
+            <!-- PÁGINA DASHBOARD (LISTA DE CANAIS  ) -->
+            <div id="dashboard-page" class="page active">
+                <header class="page-header">
+                    <h1>Meus Canais</h1>
+                    <button id="btn-add-channel" class="btn btn-primary">
+                        <i data-feather="plus"></i>
+                        <span>Adicionar Canal</span>
+                    </button>
+                </header>
+                <div class="table-container">
+                    <table id="channels-table">
+                        <thead>
+                            <tr>
+                                <th>NOME DO CANAL</th>
+                                <th>URL CUSTOMIZADA</th>
+                                <th>STATUS</th>
+                                <th>AÇÕES</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Linhas dos canais serão inseridas aqui pelo script.js -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- PÁGINA DE GERENCIAMENTO DE CANAL (sem alterações) -->
+            <div id="channel-management-page" class="page">
+                <header class="page-header">
+                    <button id="btn-back-to-dashboard" class="btn-icon" title="Voltar para o Dashboard">
+                        <i data-feather="arrow-left"></i>
+                    </button>
+                    <h1 id="channel-management-title">Gerenciando Canal</h1>
+                </header>
+                <div class="channel-layout">
+                    <aside class="channel-sidebar">
+                        <nav>
+                            <a href="#" class="channel-nav-item active" data-subpage="biblioteca"><i data-feather="folder"></i><span>Biblioteca</span></a>
+                            <a href="#" class="channel-nav-item" data-subpage="agendamento"><i data-feather="calendar"></i><span>Agendamento</span></a>
+                        </nav>
+                    </aside>
+                    <div class="channel-content">
+                        <div id="biblioteca-subpage" class="channel-page active">
+                            <!-- Conteúdo da Biblioteca -->
+                        </div>
+                        <div id="agendamento-subpage" class="channel-page">
+                            <!-- Conteúdo do Agendamento -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PÁGINA DE CONFIGURAÇÕES (sem alterações) -->
+            <div id="settings-page" class="page">
+                <header class="page-header"><h1>Configurações</h1></header>
+                <p>Opções de configuração da aplicação aparecerão aqui.</p>
+            </div>
+        </main>
+    </div>
+
+    <!-- MODAL DE ADIÇÃO DE CANAL (NOVO) -->
+    <div id="add-channel-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-button">&times;</span>
+            <h2>Adicionar Novo Canal</h2>
+            <p>Preencha os campos abaixo com os dados gerados pela <a href="/auth.html" target="_blank">ferramenta de autorização</a>.</p>
+            <form id="add-channel-form">
+                <div class="input-group">
+                    <label for="channel-id">ID do Canal (Obrigatório)</label>
+                    <input type="text" id="channel-id" required placeholder="Começa com UC...">
+                </div>
+                <div class="input-group">
+                    <label for="channel-title">Nome do Canal (Obrigatório)</label>
+                    <input type="text" id="channel-title" required placeholder="Nome amigável para o dashboard">
+                </div>
+                <div class="input-group">
+                    <label for="channel-custom-url">URL Customizada (Opcional)</label>
+                    <input type="text" id="channel-custom-url" placeholder="Ex: @meucanal">
+                </div>
+                <div class="input-group">
+                    <label for="channel-refresh-token">Refresh Token (Obrigatório)</label>
+                    <textarea id="channel-refresh-token" rows="4" required placeholder="Cole o Refresh Token completo aqui"></textarea>
+                </div>
+                <div class="modal-actions">
+                    <button type="submit" class="btn btn-primary">Salvar Canal</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- OUTROS MODAIS E OVERLAYS (sem alterações) -->
+    <div id="schedule-modal" class="modal"> <!-- Modal de agendamento, mantido para o futuro --> </div>
+    <div id="loading-overlay"><div class="spinner"></div></div>
+
+    <!-- SCRIPTS -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-storage.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>

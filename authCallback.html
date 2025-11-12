@@ -1,0 +1,27 @@
+<!-- public/authCallback.html -->
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Processando autorização...</title>
+    <script>
+        window.onload = function() {
+            // Pega o código da URL
+            const urlParams = new URLSearchParams(window.location.search);
+            const code = urlParams.get('code');
+
+            if (code) {
+                // Armazena o código no localStorage e fecha esta janela,
+                // voltando o foco para a janela principal.
+                localStorage.setItem('authorization_code', code);
+                window.close();
+            } else {
+                document.body.innerHTML = '<h1>Erro: Código de autorização não encontrado.</h1>';
+            }
+        };
+    </script>
+</head>
+<body>
+    <h1>Processando... Por favor, aguarde.</h1>
+</body>
+</html>

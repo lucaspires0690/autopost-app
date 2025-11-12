@@ -1,0 +1,12 @@
+# Dependências do Node
+node_modules/
+
+# Arquivos de ambiente
+.env
+.env.local
+.env.*
+
+# Arquivos de credenciais e chaves (MUITO IMPORTANTE)
+credentials.json
+service-account-key.json
+*.json.json 
