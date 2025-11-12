@@ -13,7 +13,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // --- VARIÁVEIS DE PRODUÇÃO ---
-    const CLIENT_ID = "498596971317-p183rsbts6bpomv989r8ov46kt9idrtb.apps.googleusercontent.com";
+    const CLIENT_ID = "498596971317-hat8dm8k1ok204omfadfqnej9bsnpc69.apps.googleusercontent.com";
     const REDIRECT_URI = "https://autopost-app.vercel.app/authCallback.html";
 
     const btnAuthorize = document.getElementById('btn-authorize');
