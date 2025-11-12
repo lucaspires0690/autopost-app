@@ -1,8 +1,8 @@
-// public/auth.js
+// public/auth.js - VERSÃO FINAL CORRIGIDA
 
 document.addEventListener('DOMContentLoaded', () => {
     // --- CONFIGURAÇÃO DO FIREBASE ---
-    // Substitua pelos dados do seu projeto Firebase
+    // Dados do seu projeto Firebase
     const firebaseConfig = {
       apiKey: "AIzaSyCJyUdfldom5yTcaDkk4W1r8IGYxeO2epI",
       authDomain: "autopost-v2.firebaseapp.com",
@@ -16,9 +16,9 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // --- VARIÁVEIS DE PRODUÇÃO ---
-    // Substitua pelo seu Client ID do Google Cloud
+    // Seu Client ID real do Google Cloud
     const CLIENT_ID = "498596971317-p183rsbts6bpomv989r8ov46kt9idrtb.apps.googleusercontent.com";
-    // URL de produção final
+    // Sua URL de produção final da Vercel
     const REDIRECT_URI = "https://autopost-app.vercel.app/authCallback.html";
 
     const btnAuthorize = document.getElementById('btn-authorize' );
