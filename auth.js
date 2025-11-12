@@ -1,6 +1,5 @@
+// auth.js - VERSÃO CORRETA E FINAL
 document.addEventListener('DOMContentLoaded', () => {
-    // --- CONFIGURAÇÃO DO FIREBASE ---
-    // As chaves que você já configurou corretamente
     const firebaseConfig = {
       apiKey: "AIzaSyCJyUdfldom5yTcaDKk4W1r8IGYXe02epI",
       authDomain: "autopost-v2.firebaseapp.com",
@@ -13,7 +12,6 @@ document.addEventListener('DOMContentLoaded', () => {
         firebase.initializeApp(firebaseConfig);
     }
 
-    // --- VARIÁVEIS DE PRODUÇÃO ---
     const CLIENT_ID = "498596971317-hat8dm8k1ok204omfadfqnej9bsnpc69.apps.googleusercontent.com";
     const REDIRECT_URI = "https://autopost-app.vercel.app/authCallback.html";
 
@@ -40,9 +38,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const popup = window.open(authUrl, 'authPopup', 'width=600,height=700');
 
         const handleAuthMessage = (event) => {
-            if (event.origin !== window.location.origin) {
-                return;
-            }
+            if (event.origin !== window.location.origin) return;
             if (event.data.type === 'AUTH_CODE') {
                 window.removeEventListener('message', handleAuthMessage);
                 processAuthCode(event.data.code);
@@ -62,7 +58,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (popup && popup.closed) {
                     clearInterval(checkPopupClosed);
                     window.removeEventListener('message', handleAuthMessage);
-                    console.log('Popup foi fechado pelo usuário');
                 }
             } catch (error) {
                 clearInterval(checkPopupClosed);
@@ -92,16 +87,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 refresh_token: result.data.oauth.refresh_token
             };
 
-            // --- MODIFICAÇÃO PARA INTEGRAR COM O DASHBOARD ---
-            // Se esta janela foi aberta por outra (o dashboard), envia os dados e fecha.
             if (window.opener) {
                 window.opener.postMessage({ type: 'newChannelData', data: finalData }, '*');
                 window.close();
-                return; // Impede que o código abaixo seja executado
+                return;
             }
-            // --- FIM DA MODIFICAÇÃO ---
 
-            // O código abaixo só roda se a página for aberta diretamente.
             const resultElement = document.getElementById('result');
             if(resultElement) {
                 resultElement.textContent = JSON.stringify(finalData, null, 2);
@@ -112,9 +103,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if(step1) step1.style.display = 'none';
             if(step2) step2.style.display = 'block';
             
-            if (typeof feather !== 'undefined') {
-                feather.replace();
-            }
+            if (typeof feather !== 'undefined') feather.replace();
 
         } catch (error) {
             console.error("❌ Erro ao chamar a Cloud Function:", error);
@@ -139,7 +128,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 }, 2000);
             }).catch(err => {
                 console.error('Erro ao copiar:', err);
-                alert('Não foi possível copiar o texto.');
             });
         });
     }
