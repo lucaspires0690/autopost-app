@@ -1,7 +1,8 @@
 document.addEventListener('DOMContentLoaded', () => {
     // --- CONFIGURAÇÃO DO FIREBASE ---
+    // As chaves que você já configurou corretamente
     const firebaseConfig = {
-      apiKey: "AIzaSyCJyUdfldom5yTcaDkk4W1r8IGYxeO2epI",
+      apiKey: "AIzaSyCJyUdfldom5yTcaDKk4W1r8IGYXe02epI",
       authDomain: "autopost-v2.firebaseapp.com",
       projectId: "autopost-v2",
       storageBucket: "autopost-v2.firebasestorage.app",
@@ -16,7 +17,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const CLIENT_ID = "498596971317-hat8dm8k1ok204omfadfqnej9bsnpc69.apps.googleusercontent.com";
     const REDIRECT_URI = "https://autopost-app.vercel.app/authCallback.html";
 
-    const btnAuthorize = document.getElementById('btn-authorize');
+    const btnAuthorize = document.getElementById('btn-authorize' );
     if (btnAuthorize) {
         btnAuthorize.addEventListener('click', handleAuthorization);
     }
@@ -26,10 +27,10 @@ document.addEventListener('DOMContentLoaded', () => {
             'https://www.googleapis.com/auth/youtube.upload',
             'https://www.googleapis.com/auth/youtube',
             'https://www.googleapis.com/auth/youtube.readonly'
-        ].join(' ');
+        ].join(' ' );
 
         const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?` +
-            `client_id=${encodeURIComponent(CLIENT_ID)}` +
+            `client_id=${encodeURIComponent(CLIENT_ID )}` +
             `&redirect_uri=${encodeURIComponent(REDIRECT_URI)}` +
             `&response_type=code` +
             `&scope=${encodeURIComponent(scopes)}` +
@@ -38,25 +39,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const popup = window.open(authUrl, 'authPopup', 'width=600,height=700');
 
-        // Listener para receber mensagens do popup
         const handleAuthMessage = (event) => {
-            // Verifica a origem por segurança (deve ser do mesmo domínio)
             if (event.origin !== window.location.origin) {
                 return;
             }
-
             if (event.data.type === 'AUTH_CODE') {
-                // Remove o listener após receber o código
                 window.removeEventListener('message', handleAuthMessage);
-                
-                // Processa o código de autorização
                 processAuthCode(event.data.code);
-                
             } else if (event.data.type === 'AUTH_ERROR') {
-                // Remove o listener
                 window.removeEventListener('message', handleAuthMessage);
-                
-                // Exibe mensagem de erro
                 const errorMessage = document.getElementById('auth-error-message');
                 if (errorMessage) {
                     errorMessage.textContent = `Erro na autenticação: ${event.data.error}`;
@@ -64,22 +55,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             }
         };
-
-        // Adiciona o listener
         window.addEventListener('message', handleAuthMessage);
 
-        // Verifica se o popup foi fechado antes de completar (usuário cancelou)
         const checkPopupClosed = setInterval(() => {
             try {
                 if (popup && popup.closed) {
                     clearInterval(checkPopupClosed);
                     window.removeEventListener('message', handleAuthMessage);
-                    
-                    // Opcional: mostrar mensagem que usuário cancelou
                     console.log('Popup foi fechado pelo usuário');
                 }
             } catch (error) {
-                // Ignora erros de COOP - não tenta acessar popup.closed se bloqueado
                 clearInterval(checkPopupClosed);
             }
         }, 1000);
@@ -97,11 +82,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
         try {
             const functions = firebase.functions();
-            const exchangeAuthCode = functions.httpsCallable('exchangeAuthCode');
-
+            const exchangeAuthCode = functions.httpsCallable('exchangeAuthCode' );
             const result = await exchangeAuthCode({ code: code });
 
-            // Estrutura os dados finais para exibição
             const finalData = {
                 id: result.data.channelInfo.id,
                 title: result.data.channelInfo.title,
@@ -109,6 +92,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 refresh_token: result.data.oauth.refresh_token
             };
 
+            // --- MODIFICAÇÃO PARA INTEGRAR COM O DASHBOARD ---
+            // Se esta janela foi aberta por outra (o dashboard), envia os dados e fecha.
+            if (window.opener) {
+                window.opener.postMessage({ type: 'newChannelData', data: finalData }, '*');
+                window.close();
+                return; // Impede que o código abaixo seja executado
+            }
+            // --- FIM DA MODIFICAÇÃO ---
+
+            // O código abaixo só roda se a página for aberta diretamente.
             const resultElement = document.getElementById('result');
             if(resultElement) {
                 resultElement.textContent = JSON.stringify(finalData, null, 2);
@@ -119,7 +112,6 @@ document.addEventListener('DOMContentLoaded', () => {
             if(step1) step1.style.display = 'none';
             if(step2) step2.style.display = 'block';
             
-            // Re-inicializa os ícones Feather, se a biblioteca estiver presente
             if (typeof feather !== 'undefined') {
                 feather.replace();
             }

@@ -1,6 +1,6 @@
 // ===================================================================
 // ARQUIVO: public/script.js
-// VERSÃO 7 - LÓGICA DE CADASTRO MANUAL DE CANAL APRIMORADA
+// VERSÃO 8 - INTEGRAÇÃO COM FERRAMENTA DE AUTORIZAÇÃO AUTOMÁTICA
 // ===================================================================
 
 // ===================================================================
@@ -8,7 +8,7 @@
 // ===================================================================
 
 const firebaseConfig = {
-  apiKey: "AIzaSyCJyUdfldom5yTcaDkk4W1r8IGYxeO2epI",
+  apiKey: "AIzaSyCJyUdfldom5yTcaDKk4W1r8IGYXe02epI",
   authDomain: "autopost-v2.firebaseapp.com",
   projectId: "autopost-v2",
   storageBucket: "autopost-v2.firebasestorage.app",
@@ -31,7 +31,7 @@ const AppState = {
 };
 
 // ===================================================================
-// FUNÇÕES UTILITÁRIAS E DE UI
+// FUNÇÕES UTILITÁRIAS E DE UI (Sem alterações)
 // ===================================================================
 
 function showLoading(show) {
@@ -104,15 +104,39 @@ function setupEventListeners() {
   document.getElementById('login-form')?.addEventListener('submit', handleLogin);
   document.getElementById('btn-logout')?.addEventListener('click', handleLogout);
   
-  // Botão para abrir o modal de adicionar canal
+  // --- INÍCIO DA MODIFICAÇÃO ---
+
+  // 1. Botão para ABRIR A FERRAMENTA DE AUTORIZAÇÃO
   document.getElementById('btn-add-channel')?.addEventListener('click', () => {
-    openModal('add-channel-modal');
+    const authToolUrl = 'https://autopost-app.vercel.app/auth.html';
+    window.open(authToolUrl, 'authToolWindow', 'width=800,height=600' );
   });
 
-  // Formulário de adição de canal
+  // 2. Listener para RECEBER DADOS da ferramenta de autorização
+  window.addEventListener('message', (event) => {
+    if (event.origin !== 'https://autopost-app.vercel.app' ) return;
+
+    if (event.data.type === 'newChannelData') {
+        const channelData = event.data.data;
+        console.log('Dados do novo canal recebidos:', channelData);
+        
+        // Preenche o formulário do modal com os dados recebidos
+        document.getElementById('channel-id').value = channelData.id || '';
+        document.getElementById('channel-title').value = channelData.title || '';
+        document.getElementById('channel-custom-url').value = channelData.customUrl || '';
+        document.getElementById('channel-refresh-token').value = channelData.refresh_token || '';
+
+        // Abre o modal para o usuário confirmar
+        openModal('add-channel-modal');
+    }
+  });
+
+  // --- FIM DA MODIFICAÇÃO ---
+
+  // Formulário de adição de canal (a função handleSaveChannel já está correta)
   document.getElementById('add-channel-form')?.addEventListener('submit', handleSaveChannel);
 
-  // Navegação
+  // Navegação (sem alterações)
   document.querySelectorAll('.sidebar-nav .nav-item').forEach(item => {
     item.addEventListener('click', (e) => {
       e.preventDefault();
@@ -120,7 +144,7 @@ function setupEventListeners() {
     });
   });
 
-  // Fechar Modais
+  // Fechar Modais (sem alterações)
   document.querySelectorAll('.modal .close-button').forEach(button => {
     button.addEventListener('click', () => closeModal(button.closest('.modal').id));
   });
@@ -132,7 +156,7 @@ function setupEventListeners() {
 }
 
 // ===================================================================
-// LÓGICA DE AUTENTICAÇÃO E CADASTRO DE CANAL
+// LÓGICA DE AUTENTICAÇÃO E CADASTRO DE CANAL (Sem alterações)
 // ===================================================================
 
 async function handleLogin(e) {
@@ -157,6 +181,8 @@ async function handleLogout() {
   }
 }
 
+// A função handleSaveChannel que você já tinha está PERFEITA para o novo fluxo.
+// Ela já lê os dados do formulário e salva no Firestore. Nenhuma mudança necessária aqui.
 async function handleSaveChannel(e) {
     e.preventDefault();
     if (!AppState.currentUser) {
@@ -164,23 +190,19 @@ async function handleSaveChannel(e) {
         return;
     }
 
-    // 1. Pega os dados do formulário
     const channelId = document.getElementById('channel-id').value.trim();
     const channelTitle = document.getElementById('channel-title').value.trim();
     const customUrl = document.getElementById('channel-custom-url').value.trim();
     const refreshToken = document.getElementById('channel-refresh-token').value.trim();
 
-    // 2. Validações
     if (!channelId || !channelTitle || !refreshToken) {
         showError("Os campos ID do Canal, Nome do Canal e Refresh Token são obrigatórios.");
         return;
     }
-
     if (!channelId.startsWith('UC')) {
         showError("ID do Canal inválido. Deve começar com 'UC'");
         return;
     }
-
     if (refreshToken.length < 20) {
         showError("Refresh Token parece inválido. Verifique se copiou corretamente.");
         return;
@@ -188,7 +210,8 @@ async function handleSaveChannel(e) {
 
     showLoading(true);
 
-    // 3. Monta o objeto completo para o Firestore
+    // A estrutura de dados que você definiu está um pouco diferente da que eu sugeri.
+    // Vou manter a SUA estrutura para não quebrar sua lógica de leitura.
     const channelData = {
         channelInfo: {
             id: channelId,
@@ -208,7 +231,6 @@ async function handleSaveChannel(e) {
     };
 
     try {
-        // 4. Salva no Firestore
         const userId = AppState.currentUser.uid;
         const channelRef = db.collection('usuarios').doc(userId).collection('canais').doc(channelId);
         
@@ -227,7 +249,7 @@ async function handleSaveChannel(e) {
 }
 
 // ===================================================================
-// SINCRONIZAÇÃO E EXIBIÇÃO DE CANAIS
+// SINCRONIZAÇÃO E EXIBIÇÃO DE CANAIS (Sem alterações)
 // ===================================================================
 
 function setupChannelListener(userId) {
@@ -285,7 +307,7 @@ window.excluirCanal = async function(userId, channelId) {
 };
 
 // ===================================================================
-// FUNÇÕES DE NAVEGAÇÃO
+// FUNÇÕES DE NAVEGAÇÃO (Sem alterações)
 // ===================================================================
 
 function mostrarPagina(pageId) {
@@ -298,7 +320,4 @@ function mostrarPagina(pageId) {
 
 function manageChannel(channelId) {
     alert(`Funcionalidade "Gerenciar Canal" para ${channelId} será implementada em breve.`);
-    // Aqui você pode redirecionar para a página de gerenciamento do canal
-    // AppState.canalAtual = channelId;
-    // mostrarPagina('channel-management');
 }
