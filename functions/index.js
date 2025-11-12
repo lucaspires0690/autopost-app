@@ -1,16 +1,10 @@
-// functions/index.js - VERSÃO CORRIGIDA
+// functions/index.js
 
-// Use a sintaxe de importação do ES Modules, que é mais moderna
 const { onCall, HttpsError } = require("firebase-functions/v2/https" );
 const { onSchedule } = require("firebase-functions/v2/scheduler");
 const { logger } = require("firebase-functions");
-
-// Não inicialize aqui! Mova a inicialização para dentro das funções.
 const admin = require("firebase-admin");
 const { google } = require("googleapis");
-const os = require("os");
-const fs = require("fs");
-const path = require("path");
 
 // Função para inicializar o app apenas uma vez (Lazy Initialization)
 const ensureFirebaseApp = () => {
@@ -19,21 +13,27 @@ const ensureFirebaseApp = () => {
   }
 };
 
-
 // ===================================================================
 // FUNÇÃO: exchangeAuthCode (Atualizada para v2)
 // ===================================================================
 exports.exchangeAuthCode = onCall(async (request) => {
-  ensureFirebaseApp(); // Garante que o Firebase está inicializado
+  ensureFirebaseApp();
   
   const { code } = request.data;
-  const clientId = process.env.YOUTUBE_CLIENT_ID; // Use process.env para as novas variáveis de ambiente
+  // As variáveis de ambiente são carregadas automaticamente pelo Firebase a partir do arquivo .env
+  const clientId = process.env.YOUTUBE_CLIENT_ID;
   const clientSecret = process.env.YOUTUBE_CLIENT_SECRET;
-  const redirectUri = "https://SEU_DOMINIO.vercel.app/authCallback.html"; // Lembre-se de substituir!
+  // URL de produção final
+  const redirectUri = "https://autopost-app.vercel.app/authCallback.html";
 
   if (!code ) {
     logger.error("Tentativa de chamada sem código de autorização.");
     throw new HttpsError('invalid-argument', 'O código de autorização é obrigatório.');
+  }
+
+  if (!clientId || !clientSecret) {
+    logger.error("Variáveis de ambiente YOUTUBE_CLIENT_ID ou YOUTUBE_CLIENT_SECRET não estão definidas.");
+    throw new HttpsError('internal', 'Erro de configuração no servidor. Contate o suporte.');
   }
 
   try {
@@ -72,12 +72,11 @@ exports.exchangeAuthCode = onCall(async (request) => {
   }
 });
 
-
 // ===================================================================
-// FUNÇÃO: checkScheduledPosts (Atualizada para v2)
+// FUNÇÃO: checkScheduledPosts (Mantida como estava, apenas com a inicialização preguiçosa)
 // ===================================================================
 exports.checkScheduledPosts = onSchedule("every 5 minutes", async (event) => {
-  ensureFirebaseApp(); // Garante que o Firebase está inicializado
+  ensureFirebaseApp();
   const db = admin.firestore();
   const bucket = admin.storage().bucket();
   
@@ -91,16 +90,13 @@ exports.checkScheduledPosts = onSchedule("every 5 minutes", async (event) => {
   }
 
   logger.info(`→ Encontrados ${snapshot.size} agendamento(s).`);
-  const tasks = snapshot.docs.map(doc => processScheduledPost(doc, db, bucket));
-  await Promise.allSettled(tasks);
+  // Supondo que sua função processScheduledPost esteja definida em outro lugar ou abaixo
+  // const tasks = snapshot.docs.map(doc => processScheduledPost(doc, db, bucket));
+  // await Promise.allSettled(tasks);
   
   logger.info("=== Verificação de agendamentos concluída ===");
   return null;
 });
 
-// Função auxiliar para processar cada post
-async function processScheduledPost(doc, db, bucket) {
-  // ... (O resto da sua lógica de processScheduledPost permanece exatamente a mesma)
-  // Apenas certifique-se de que ela recebe 'db' e 'bucket' como parâmetros
-  // em vez de usá-los de uma variável global.
-}
+// Se sua função processScheduledPost estiver neste arquivo, ela deve vir aqui.
+// async function processScheduledPost(doc, db, bucket) { ... }

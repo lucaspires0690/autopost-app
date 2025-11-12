@@ -1,24 +1,30 @@
 // public/auth.js
+
 document.addEventListener('DOMContentLoaded', () => {
     // --- CONFIGURAÇÃO DO FIREBASE ---
+    // Substitua pelos dados do seu projeto Firebase
     const firebaseConfig = {
-        apiKey: "SUA_API_KEY",
-        authDomain: "SEU_AUTH_DOMAIN",
-        projectId: "SEU_PROJECT_ID",
-        // ...resto da config
+      apiKey: "AIzaSyCJyUdfldom5yTcaDkk4W1r8IGYxeO2epI",
+      authDomain: "autopost-v2.firebaseapp.com",
+      projectId: "autopost-v2",
+      storageBucket: "autopost-v2.appspot.com",
+      messagingSenderId: "498596971317",
+      appId: "1:498596971317:web:3e2536fe8e4fd28e0d427c"
     };
     if (!firebase.apps.length) {
         firebase.initializeApp(firebaseConfig);
     }
 
-    // --- SUAS VARIÁVEIS DE PRODUÇÃO ---
-    const CLIENT_ID = "SEU_CLIENT_ID.apps.googleusercontent.com"; // O mesmo do Google Cloud
-    const REDIRECT_URI = "https://SEU_DOMINIO.vercel.app/authCallback.html"; // O URI de callback
+    // --- VARIÁVEIS DE PRODUÇÃO ---
+    // Substitua pelo seu Client ID do Google Cloud
+    const CLIENT_ID = "498596971317-p183rsbts6bpomv989r8ov46kt9idrtb.apps.googleusercontent.com";
+    // URL de produção final
+    const REDIRECT_URI = "https://autopost-app.vercel.app/authCallback.html";
 
     const btnAuthorize = document.getElementById('btn-authorize' );
-    btnAuthorize.addEventListener('click', () => {
-        handleAuthorization();
-    });
+    if (btnAuthorize) {
+        btnAuthorize.addEventListener('click', handleAuthorization);
+    }
 
     function handleAuthorization() {
         const scopes = [
@@ -35,39 +41,34 @@ document.addEventListener('DOMContentLoaded', () => {
             `&access_type=offline` +
             `&prompt=consent`;
 
-        // Abre a autorização em um popup
         const popup = window.open(authUrl, 'authPopup', 'width=600,height=700');
 
-        // Escuta quando o código de autorização estiver pronto
         const interval = setInterval(() => {
             try {
-                // Se o popup foi fechado pelo usuário
                 if (popup.closed) {
                     clearInterval(interval);
                     return;
                 }
-                // Verifica se o código foi salvo no localStorage pela página de callback
                 const code = localStorage.getItem('authorization_code');
                 if (code) {
                     clearInterval(interval);
-                    localStorage.removeItem('authorization_code'); // Limpa o código
-                    popup.close(); // Fecha o popup
-                    processAuthCode(code); // Processa o código
+                    localStorage.removeItem('authorization_code');
+                    popup.close();
+                    processAuthCode(code);
                 }
             } catch (error) {
-                // Ignora erros de cross-origin que acontecem antes do redirecionamento
+                // Ignora erros de cross-origin
             }
-        }, 500); // Verifica a cada meio segundo
+        }, 500);
     }
 
     async function processAuthCode(code) {
         showLoading(true);
-        displayError(''); // Limpa erros antigos
+        displayError('');
 
         try {
-            // Chama a Cloud Function que você já tem!
             const exchangeAuthCode = firebase.functions().httpsCallable('exchangeAuthCode' );
-            const result = await exchangeAuthCode({ code: code }); // Envia apenas o código
+            const result = await exchangeAuthCode({ code: code });
 
             const finalData = {
                 id: result.data.channelInfo.id,
@@ -76,10 +77,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 refresh_token: result.data.oauth.refresh_token
             };
 
-            document.getElementById('result').textContent = JSON.stringify(finalData, null, 2);
-            document.getElementById('step1').style.display = 'none';
-            document.getElementById('step2').style.display = 'block';
-            feather.replace();
+            const resultElement = document.getElementById('result');
+            if(resultElement) {
+                resultElement.textContent = JSON.stringify(finalData, null, 2);
+            }
+            
+            const step1 = document.getElementById('step1');
+            const step2 = document.getElementById('step2');
+            if(step1) step1.style.display = 'none';
+            if(step2) step2.style.display = 'block';
+            
+            if (typeof feather !== 'undefined') feather.replace();
 
         } catch (error) {
             console.error("❌ Erro ao processar código:", error);
@@ -89,6 +97,33 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // Funções auxiliares (showLoading, displayError, copy-button)
-    // ... (mantenha as funções que você já tem para UI)
+    // --- Funções Auxiliares de UI ---
+    function showLoading(show) {
+        const overlay = document.getElementById('loading-overlay');
+        if (overlay) overlay.style.display = show ? 'flex' : 'none';
+    }
+
+    function displayError(message) {
+        const errorElement = document.getElementById('auth-error-message');
+        if (errorElement) {
+            errorElement.textContent = message;
+            errorElement.style.display = message ? 'block' : 'none';
+        }
+    }
+
+    const copyButton = document.getElementById('copy-button');
+    if (copyButton) {
+        copyButton.addEventListener('click', () => {
+            const resultText = document.getElementById('result').innerText;
+            navigator.clipboard.writeText(resultText).then(() => {
+                const originalText = copyButton.innerHTML;
+                copyButton.innerHTML = 'Copiado!';
+                setTimeout(() => {
+                    copyButton.innerHTML = originalText;
+                }, 2000);
+            }).catch(err => {
+                alert('Erro ao copiar.');
+            });
+        });
+    }
 });
