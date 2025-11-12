@@ -1,6 +1,6 @@
 // ===================================================================
 // ARQUIVO: public/script.js
-// VERSÃO 8 - INTEGRAÇÃO COM FERRAMENTA DE AUTORIZAÇÃO AUTOMÁTICA
+// VERSÃO 9 - AUTORIZAÇÃO OAUTH DIRETA NO DASHBOARD
 // ===================================================================
 
 // ===================================================================
@@ -30,8 +30,19 @@ const AppState = {
   channelListenerUnsubscribe: null,
 };
 
+// Configurações OAuth do Google
+const OAUTH_CONFIG = {
+  CLIENT_ID: "498596971317-hat8dm8k1ok204omfadfqnej9bsnpc69.apps.googleusercontent.com",
+  REDIRECT_URI: "https://autopost-app.vercel.app/authCallback.html",
+  SCOPES: [
+    'https://www.googleapis.com/auth/youtube.upload',
+    'https://www.googleapis.com/auth/youtube',
+    'https://www.googleapis.com/auth/youtube.readonly'
+  ]
+};
+
 // ===================================================================
-// FUNÇÕES UTILITÁRIAS E DE UI (Sem alterações)
+// FUNÇÕES UTILITÁRIAS E DE UI
 // ===================================================================
 
 function showLoading(show) {
@@ -104,39 +115,18 @@ function setupEventListeners() {
   document.getElementById('login-form')?.addEventListener('submit', handleLogin);
   document.getElementById('btn-logout')?.addEventListener('click', handleLogout);
   
-  // --- INÍCIO DA MODIFICAÇÃO ---
+  // ===================================================================
+  // NOVO: BOTÃO ADICIONAR CANAL - DISPARA OAUTH DIRETO
+  // ===================================================================
+  document.getElementById('btn-add-channel')?.addEventListener('click', handleAddChannelClick);
 
-  // 1. Botão para ABRIR A FERRAMENTA DE AUTORIZAÇÃO
-  document.getElementById('btn-add-channel')?.addEventListener('click', () => {
-    const authToolUrl = 'https://autopost-app.vercel.app/auth.html';
-    window.open(authToolUrl, 'authToolWindow', 'width=800,height=600' );
-  });
+  // Listener para receber dados do popup de autorização
+  window.addEventListener('message', handleAuthMessage);
 
-  // 2. Listener para RECEBER DADOS da ferramenta de autorização
-  window.addEventListener('message', (event) => {
-    if (event.origin !== 'https://autopost-app.vercel.app' ) return;
-
-    if (event.data.type === 'newChannelData') {
-        const channelData = event.data.data;
-        console.log('Dados do novo canal recebidos:', channelData);
-        
-        // Preenche o formulário do modal com os dados recebidos
-        document.getElementById('channel-id').value = channelData.id || '';
-        document.getElementById('channel-title').value = channelData.title || '';
-        document.getElementById('channel-custom-url').value = channelData.customUrl || '';
-        document.getElementById('channel-refresh-token').value = channelData.refresh_token || '';
-
-        // Abre o modal para o usuário confirmar
-        openModal('add-channel-modal');
-    }
-  });
-
-  // --- FIM DA MODIFICAÇÃO ---
-
-  // Formulário de adição de canal (a função handleSaveChannel já está correta)
+  // Formulário de adição de canal
   document.getElementById('add-channel-form')?.addEventListener('submit', handleSaveChannel);
 
-  // Navegação (sem alterações)
+  // Navegação
   document.querySelectorAll('.sidebar-nav .nav-item').forEach(item => {
     item.addEventListener('click', (e) => {
       e.preventDefault();
@@ -144,7 +134,7 @@ function setupEventListeners() {
     });
   });
 
-  // Fechar Modais (sem alterações)
+  // Fechar Modais
   document.querySelectorAll('.modal .close-button').forEach(button => {
     button.addEventListener('click', () => closeModal(button.closest('.modal').id));
   });
@@ -156,7 +146,88 @@ function setupEventListeners() {
 }
 
 // ===================================================================
-// LÓGICA DE AUTENTICAÇÃO E CADASTRO DE CANAL (Sem alterações)
+// FLUXO DE AUTORIZAÇÃO OAUTH (INTEGRADO NO DASHBOARD)
+// ===================================================================
+
+function handleAddChannelClick() {
+  console.log("🔐 Iniciando fluxo de autorização OAuth...");
+  
+  const scopes = OAUTH_CONFIG.SCOPES.join(' ');
+  const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?` +
+    `client_id=${encodeURIComponent(OAUTH_CONFIG.CLIENT_ID)}` +
+    `&redirect_uri=${encodeURIComponent(OAUTH_CONFIG.REDIRECT_URI)}` +
+    `&response_type=code` +
+    `&scope=${encodeURIComponent(scopes)}` +
+    `&access_type=offline` +
+    `&prompt=consent`;
+
+  // Abre o popup de autorização do Google
+  const popup = window.open(authUrl, 'authPopup', 'width=600,height=700');
+
+  // Monitora se o popup foi fechado manualmente
+  const checkPopupClosed = setInterval(() => {
+    try {
+      if (popup && popup.closed) {
+        clearInterval(checkPopupClosed);
+        console.log("ℹ️ Popup de autorização foi fechado.");
+      }
+    } catch (error) {
+      clearInterval(checkPopupClosed);
+    }
+  }, 1000);
+}
+
+function handleAuthMessage(event) {
+  // Valida a origem da mensagem
+  if (event.origin !== window.location.origin) return;
+
+  if (event.data.type === 'AUTH_CODE') {
+    console.log("✅ Código de autorização recebido!");
+    processAuthCode(event.data.code);
+  } else if (event.data.type === 'AUTH_ERROR') {
+    console.error("❌ Erro na autorização:", event.data.error);
+    showError(`Erro na autenticação: ${event.data.error}`);
+  }
+}
+
+async function processAuthCode(code) {
+  showLoading(true);
+  
+  try {
+    console.log("🔄 Trocando código de autorização por tokens...");
+    
+    const functions = firebase.functions();
+    const exchangeAuthCode = functions.httpsCallable('exchangeAuthCode');
+    const result = await exchangeAuthCode({ code: code });
+
+    console.log("✅ Tokens recebidos com sucesso!");
+
+    const channelData = {
+      id: result.data.channelInfo.id,
+      title: result.data.channelInfo.title,
+      customUrl: result.data.channelInfo.customUrl,
+      refresh_token: result.data.oauth.refresh_token
+    };
+
+    // Preenche o modal com os dados recebidos
+    document.getElementById('channel-id').value = channelData.id || '';
+    document.getElementById('channel-title').value = channelData.title || '';
+    document.getElementById('channel-custom-url').value = channelData.customUrl || '';
+    document.getElementById('channel-refresh-token').value = channelData.refresh_token || '';
+
+    // Abre o modal de confirmação
+    openModal('add-channel-modal');
+
+  } catch (error) {
+    console.error("❌ Erro ao processar código de autorização:", error);
+    showError(`Erro ao processar autorização: ${error.message || "Erro desconhecido"}`);
+  } finally {
+    showLoading(false);
+  }
+}
+
+// ===================================================================
+// LÓGICA DE AUTENTICAÇÃO E CADASTRO DE CANAL
 // ===================================================================
 
 async function handleLogin(e) {
@@ -181,8 +252,6 @@ async function handleLogout() {
   }
 }
 
-// A função handleSaveChannel que você já tinha está PERFEITA para o novo fluxo.
-// Ela já lê os dados do formulário e salva no Firestore. Nenhuma mudança necessária aqui.
 async function handleSaveChannel(e) {
     e.preventDefault();
     if (!AppState.currentUser) {
@@ -210,8 +279,6 @@ async function handleSaveChannel(e) {
 
     showLoading(true);
 
-    // A estrutura de dados que você definiu está um pouco diferente da que eu sugeri.
-    // Vou manter a SUA estrutura para não quebrar sua lógica de leitura.
     const channelData = {
         channelInfo: {
             id: channelId,
@@ -227,7 +294,7 @@ async function handleSaveChannel(e) {
             token_type: "Bearer"
         },
         status: "active",
-        lastUpdated: firebase.firestore.FieldValue.serverTimestamp( )
+        lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
     };
 
     try {
@@ -249,7 +316,7 @@ async function handleSaveChannel(e) {
 }
 
 // ===================================================================
-// SINCRONIZAÇÃO E EXIBIÇÃO DE CANAIS (Sem alterações)
+// SINCRONIZAÇÃO E EXIBIÇÃO DE CANAIS
 // ===================================================================
 
 function setupChannelListener(userId) {
@@ -307,7 +374,7 @@ window.excluirCanal = async function(userId, channelId) {
 };
 
 // ===================================================================
-// FUNÇÕES DE NAVEGAÇÃO (Sem alterações)
+// FUNÇÕES DE NAVEGAÇÃO
 // ===================================================================
 
 function mostrarPagina(pageId) {
