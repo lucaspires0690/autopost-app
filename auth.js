@@ -96,7 +96,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         try {
-            const functions = firebase.functions('us-central1');
+            const functions = firebase.functions();
             const exchangeAuthCode = functions.httpsCallable('exchangeAuthCode');
 
             const result = await exchangeAuthCode({ code: code });
