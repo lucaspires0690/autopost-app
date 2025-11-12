@@ -5,13 +5,16 @@ const { initializeApp } = require("firebase-admin/app");
 
 initializeApp();
 
-exports.exchangeAuthCode = onCall({
-    region: "us-central1",
-    secrets: ["YOUTUBE_CLIENT_ID", "YOUTUBE_CLIENT_SECRET"],
-    cors: ["https://autopost-app.vercel.app"],
-}, async (request ) => {
+exports.exchangeAuthCode = onCall(
+    // Voltando a usar a sintaxe de 'secrets'
+    {
+        secrets: ["YOUTUBE_CLIENT_ID", "YOUTUBE_CLIENT_SECRET"],
+        region: "us-central1",
+        cors: ["https://autopost-app.vercel.app"]
+    },
+    async (request ) => {
     
-    logger.info("✅ [exchangeAuthCode] Gen 2 - Função invocada.");
+    logger.info("✅ [exchangeAuthCode] Gen 2 - Tentativa com sintaxe de secrets simplificada.");
 
     try {
         const code = request.data.code;
@@ -19,8 +22,15 @@ exports.exchangeAuthCode = onCall({
             throw new HttpsError("invalid-argument", "O código de autorização é obrigatório.");
         }
 
+        // Lendo os segredos via process.env, como no início
         const clientId = process.env.YOUTUBE_CLIENT_ID;
         const clientSecret = process.env.YOUTUBE_CLIENT_SECRET;
+
+        if (!clientId || !clientSecret) {
+            logger.error("ERRO CRÍTICO: Segredos YOUTUBE_CLIENT_ID ou YOUTUBE_CLIENT_SECRET não foram injetados.");
+            throw new HttpsError("internal", "Configuração de segredos do servidor falhou.");
+        }
+
         const redirectUri = "https://autopost-app.vercel.app/authCallback.html";
 
         const oauth2Client = new google.auth.OAuth2(clientId, clientSecret, redirectUri );
@@ -51,7 +61,7 @@ exports.exchangeAuthCode = onCall({
         };
 
     } catch (error) {
-        logger.error("❌ [exchangeAuthCode] ERRO:", error);
-        throw new HttpsError("internal", "Erro no servidor.", error.message);
+        logger.error("❌ [exchangeAuthCode] ERRO com sintaxe de secrets simplificada:", error);
+        throw new HttpsError("internal", "Erro no servidor com sintaxe de secrets.", error.message);
     }
 });
