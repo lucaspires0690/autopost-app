@@ -1,6 +1,6 @@
 // ===================================================================
 // ARQUIVO: public/script.js (PARA O PROJETO FIREBASE)
-// VERSÃO 9.1 - ARQUITETURA CORRIGIDA (COMPLETO)
+// VERSÃO 11 - CORREÇÃO FINAL DAS URLS DE COMUNICAÇÃO
 // ===================================================================
 
 // ===================================================================
@@ -108,14 +108,14 @@ function setupEventListeners() {
 
   // 1. Botão para ABRIR A FERRAMENTA DE AUTORIZAÇÃO (na Vercel)
   document.getElementById('btn-add-channel')?.addEventListener('click', () => {
-    const authToolUrl = 'https://autopost-app.vercel.app/auth.html'; // URL do popup
+    const authToolUrl = 'https://autopost-app.vercel.app/auth.html';
     window.open(authToolUrl, 'authToolWindow', 'width=800,height=600' );
   });
 
   // 2. Listener para RECEBER DADOS da ferramenta de autorização
   window.addEventListener('message', (event) => {
-    // Aceitar mensagens APENAS da URL da ferramenta
-    if (event.origin !== 'https://autopost-app.vercel.app' ) return; // URL de origem
+    // Aceitar mensagens APENAS da URL da ferramenta na Vercel
+    if (event.origin !== 'https://autopost-app.vercel.app' ) return;
 
     if (event.data.type === 'newChannelData') {
         const channelData = event.data.data;
@@ -166,6 +166,7 @@ async function handleLogin(e) {
   try {
     await auth.signInWithEmailAndPassword(email, password);
   } catch (error) {
+    console.error("Erro de login:", error);
     document.getElementById('login-error-message').textContent = "E-mail ou senha inválidos.";
   } finally {
     showLoading(false);

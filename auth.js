@@ -1,10 +1,9 @@
 // ===================================================================
-// ARQUIVO: public/auth.js
-// VERSÃO 8 - FERRAMENTA DE AUTORIZAÇÃO COM COMUNICAÇÃO
+// ARQUIVO: public/auth.js (PARA O PROJETO VERCEL)
+// VERSÃO 11 - CORREÇÃO FINAL DAS URLS DE COMUNICAÇÃO
 // ===================================================================
 
 document.addEventListener('DOMContentLoaded', () => {
-    // --- CONFIGURAÇÃO DO FIREBASE ---
     const firebaseConfig = {
       apiKey: "AIzaSyCJyUdfldom5yTcaDKk4W1r8IGYXe02epI",
       authDomain: "autopost-v2.firebaseapp.com",
@@ -17,7 +16,6 @@ document.addEventListener('DOMContentLoaded', () => {
         firebase.initializeApp(firebaseConfig);
     }
 
-    // --- VARIÁVEIS DE PRODUÇÃO ---
     const CLIENT_ID = "498596971317-hat8dm8k1ok204omfadfqnej9bsnpc69.apps.googleusercontent.com";
     const REDIRECT_URI = "https://autopost-app.vercel.app/authCallback.html";
 
@@ -43,17 +41,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const popup = window.open(authUrl, 'authPopup', 'width=600,height=700');
 
-        // Listener para receber mensagens do popup
         const handleAuthMessage = (event) => {
-            // Verifica a origem por segurança
-            if (event.origin !== window.location.origin) {
-                return;
-            }
-
+            if (event.origin !== window.location.origin) return;
             if (event.data.type === 'AUTH_CODE') {
                 window.removeEventListener('message', handleAuthMessage);
                 processAuthCode(event.data.code);
-                
             } else if (event.data.type === 'AUTH_ERROR') {
                 window.removeEventListener('message', handleAuthMessage);
                 const errorMessage = document.getElementById('auth-error-message');
@@ -63,16 +55,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             }
         };
-
         window.addEventListener('message', handleAuthMessage);
 
-        // Verifica se o popup foi fechado
         const checkPopupClosed = setInterval(() => {
             try {
                 if (popup && popup.closed) {
                     clearInterval(checkPopupClosed);
                     window.removeEventListener('message', handleAuthMessage);
-                    console.log('Popup foi fechado pelo usuário');
                 }
             } catch (error) {
                 clearInterval(checkPopupClosed);
@@ -93,10 +82,8 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const functions = firebase.functions();
             const exchangeAuthCode = functions.httpsCallable('exchangeAuthCode' );
-
             const result = await exchangeAuthCode({ code: code });
 
-            // Estrutura os dados finais
             const finalData = {
                 id: result.data.channelInfo.id,
                 title: result.data.channelInfo.title,
@@ -104,26 +91,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 refresh_token: result.data.oauth.refresh_token
             };
 
-            // ===================================================================
-            // INÍCIO DA MODIFICAÇÃO: COMUNICAÇÃO COM O DASHBOARD
-            // ===================================================================
-            
-            // 1. Verifica se esta janela foi aberta por outra (o dashboard)
             if (window.opener) {
-                // 2. Envia os dados para a janela que a abriu
-                window.opener.postMessage({ type: 'newChannelData', data: finalData }, 'https://autopost-app.vercel.app' );
+                // Envia os dados para a janela do DASHBOARD PRINCIPAL no Firebase
+                window.opener.postMessage({ type: 'newChannelData', data: finalData }, 'https://autopost-v2.web.app' );
                 
-                // 3. Fecha a si mesma, pois o trabalho está feito
                 window.close();
-                return; // Encerra a função aqui
+                return;
             }
 
-            // ===================================================================
-            // FIM DA MODIFICAÇÃO
-            // ===================================================================
-
-            // O código abaixo só será executado se a página NÃO foi aberta por um popup.
-            // Isso mantém a funcionalidade original de exibir os dados na própria página.
+            // Fallback para caso a página seja aberta diretamente
             const resultElement = document.getElementById('result');
             if(resultElement) {
                 resultElement.textContent = JSON.stringify(finalData, null, 2);
@@ -134,9 +110,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if(step1) step1.style.display = 'none';
             if(step2) step2.style.display = 'block';
             
-            if (typeof feather !== 'undefined') {
-                feather.replace();
-            }
+            if (typeof feather !== 'undefined') feather.replace();
 
         } catch (error) {
             console.error("❌ Erro ao chamar a Cloud Function:", error);
@@ -161,7 +135,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 }, 2000);
             }).catch(err => {
                 console.error('Erro ao copiar:', err);
-                alert('Não foi possível copiar o texto.');
             });
         });
     }
