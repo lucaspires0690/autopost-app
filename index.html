@@ -58,7 +58,7 @@
 
         <!-- CONTEÚDO PRINCIPAL -->
         <main class="main-content">
-            <!-- PÁGINA DASHBOARD (LISTA DE CANAIS  ) -->
+            <!-- PÁGINA DASHBOARD (LISTA DE CANAIS   ) -->
             <div id="dashboard-page" class="page active">
                 <header class="page-header">
                     <h1>Meus Canais</h1>
@@ -118,35 +118,40 @@
         </main>
     </div>
 
-    <!-- MODAL DE ADIÇÃO DE CANAL (NOVO) -->
+    <!-- =================================================================== -->
+    <!-- INÍCIO DA MODIFICAÇÃO: MODAL DE CONFIRMAÇÃO -->
+    <!-- =================================================================== -->
     <div id="add-channel-modal" class="modal">
         <div class="modal-content">
             <span class="close-button">&times;</span>
-            <h2>Adicionar Novo Canal</h2>
-            <p>Preencha os campos abaixo com os dados gerados pela <a href="/auth.html" target="_blank">ferramenta de autorização</a>.</p>
+            <h2>Confirmar Novo Canal</h2>
+            <p>Confirme os dados do canal autorizado. Você pode editar o nome de exibição se desejar.</p>
             <form id="add-channel-form">
-                <div class="input-group">
-                    <label for="channel-id">ID do Canal (Obrigatório)</label>
-                    <input type="text" id="channel-id" required placeholder="Começa com UC...">
-                </div>
-                <div class="input-group">
-                    <label for="channel-title">Nome do Canal (Obrigatório)</label>
+                <div class="form-group">
+                    <label for="channel-title">Nome do Canal (Editável)</label>
                     <input type="text" id="channel-title" required placeholder="Nome amigável para o dashboard">
                 </div>
-                <div class="input-group">
-                    <label for="channel-custom-url">URL Customizada (Opcional)</label>
-                    <input type="text" id="channel-custom-url" placeholder="Ex: @meucanal">
+                <div class="form-group">
+                    <label for="channel-id">ID do Canal (Automático)</label>
+                    <input type="text" id="channel-id" required readonly class="readonly-input">
                 </div>
-                <div class="input-group">
-                    <label for="channel-refresh-token">Refresh Token (Obrigatório)</label>
-                    <textarea id="channel-refresh-token" rows="4" required placeholder="Cole o Refresh Token completo aqui"></textarea>
+                <div class="form-group">
+                    <label for="channel-custom-url">URL Customizada (Automático)</label>
+                    <input type="text" id="channel-custom-url" readonly class="readonly-input">
                 </div>
+                <!-- O Refresh Token fica oculto por segurança -->
+                <input type="hidden" id="channel-refresh-token">
+                
                 <div class="modal-actions">
-                    <button type="submit" class="btn btn-primary">Salvar Canal</button>
+                    <button type="submit" class="btn btn-primary">Confirmar e Salvar Canal</button>
                 </div>
             </form>
         </div>
     </div>
+    <!-- =================================================================== -->
+    <!-- FIM DA MODIFICAÇÃO -->
+    <!-- =================================================================== -->
+
 
     <!-- OUTROS MODAIS E OVERLAYS (sem alterações) -->
     <div id="schedule-modal" class="modal"> <!-- Modal de agendamento, mantido para o futuro --> </div>

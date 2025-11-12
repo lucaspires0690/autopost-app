@@ -1,6 +1,6 @@
 // ===================================================================
 // ARQUIVO: public/script.js
-// VERSÃO 10 - CORREÇÃO FINAL DO FLUXO DE ADIÇÃO DE CANAL
+// VERSÃO 8 - INTEGRAÇÃO COM FERRAMENTA DE AUTORIZAÇÃO AUTOMÁTICA
 // ===================================================================
 
 // ===================================================================
@@ -104,35 +104,41 @@ function setupEventListeners() {
   document.getElementById('login-form')?.addEventListener('submit', handleLogin);
   document.getElementById('btn-logout')?.addEventListener('click', handleLogout);
   
-  // --- LÓGICA DE ADIÇÃO DE CANAL (CORRIGIDA) ---
+  // ===================================================================
+  // INÍCIO DA MODIFICAÇÃO: LÓGICA DE ADIÇÃO DE CANAL
+  // ===================================================================
 
   // 1. Botão para ABRIR A FERRAMENTA DE AUTORIZAÇÃO
   document.getElementById('btn-add-channel')?.addEventListener('click', () => {
-    // ESTA É A ÚNICA FUNÇÃO DESTE BOTÃO AGORA
     const authToolUrl = 'https://autopost-app.vercel.app/auth.html';
     window.open(authToolUrl, 'authToolWindow', 'width=800,height=600' );
   });
 
   // 2. Listener para RECEBER DADOS da ferramenta de autorização
   window.addEventListener('message', (event) => {
+    // Verificação de segurança para a origem da mensagem
     if (event.origin !== 'https://autopost-app.vercel.app' ) return;
 
     if (event.data.type === 'newChannelData') {
         const channelData = event.data.data;
         console.log('Dados do novo canal recebidos:', channelData);
         
+        // Preenche o formulário do modal com os dados recebidos
         document.getElementById('channel-id').value = channelData.id || '';
         document.getElementById('channel-title').value = channelData.title || '';
         document.getElementById('channel-custom-url').value = channelData.customUrl || '';
         document.getElementById('channel-refresh-token').value = channelData.refresh_token || '';
 
+        // Abre o modal de confirmação
         openModal('add-channel-modal');
     }
   });
 
-  // --- FIM DA LÓGICA DE ADIÇÃO ---
+  // ===================================================================
+  // FIM DA MODIFICAÇÃO
+  // ===================================================================
 
-  // Formulário de adição de canal
+  // Formulário de adição de canal (esta função não precisa de alteração)
   document.getElementById('add-channel-form')?.addEventListener('submit', handleSaveChannel);
 
   // Navegação
