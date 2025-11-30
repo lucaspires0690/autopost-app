@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Processando autorização...</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .container {
+            text-align: center;
+            padding: 20px;
+        }
+        h1 {
+            font-size: 24px;
+            margin-bottom: 20px;
+        }
+        .spinner {
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-top: 4px solid white;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="spinner"></div>
+        <h1>Processando autorização...</h1>
+        <p>Esta janela fechará automaticamente.</p>
+    </div>
+
+    <script>
+        window.onload = function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const code = urlParams.get('code');
+            const error = urlParams.get('error');
+            const state = urlParams.get('state');
+
+            // 1. Log para diagnóstico (aparece no console do POPUP)
+            console.log('authCallback.html carregado com sucesso. Status:', { code: !!code, error, state });
+
+            // 2. Verifica se a janela principal existe. Se não existir, não pode enviar a mensagem.
+            if (!window.opener || window.opener.closed) {
+                console.error('Janela principal não encontrada (window.opener é null ou fechada).');
+                document.body.innerHTML = '<div class="container"><h1>❌ Erro</h1><p>Janela principal não encontrada.</p></div>';
+                return;
+            }
+            
+            let message = null;
+
+            if (code) {
+                message = { type: 'AUTH_CODE', code: code, state: state };
+            } else if (error) {
+                message = { type: 'AUTH_ERROR', error: error };
+            }
+
+            if (message) {
+                // 🚨 CORREÇÃO CRÍTICA: Usa o coringa '*' para garantir que a mensagem não seja bloqueada.
+                // O auth.js na janela principal tem a lista allowedOrigins para validar a segurança.
+                window.opener.postMessage(message, '*');
+                console.log('Mensagem de autenticação enviada com sucesso (usando *) para a janela principal.');
+                
+                // Fecha o popup rapidamente
+                setTimeout(() => {
+                    window.close();
+                }, 100);
+            } else {
+                console.error('Código de autorização não encontrado na URL');
+                document.body.innerHTML = '<div class="container"><h1>❌ Erro</h1><p>Código de autorização não encontrado.</p></div>';
+            }
+        };
+    </script>
+</body>
+</html>

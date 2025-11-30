@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Adicionar Canal - AutoPost</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="loading-overlay"><div class="spinner"></div></div>
+    <div class="login-container">
+        <div class="login-box">
+            <div id="step1">
+                <h1>🎥 Adicionar Canal do YouTube</h1>
+                <p>Autorize o acesso para começar a fazer uploads automáticos.</p>
+                <button id="btn-authorize" class="btn btn-primary">Autorizar com Google</button>
+                <div id="auth-error-message"></div>
+            </div>
+            <div id="step2"></div>
+        </div>
+    </div>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-functions.js"></script>
+    <script src="auth.js"></script>
+</body>
+</html>
